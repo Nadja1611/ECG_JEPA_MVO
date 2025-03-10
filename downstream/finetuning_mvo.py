@@ -262,7 +262,15 @@ def main(config):
             print(f"Best {metric_name}: {best_metrics[metric_name]:.3f}")
         print('FP: ' + str(fp)+ ' TP: ' + str(tp) + ' Pos: ' + str(pos) + ' TN: ' + str(tn), 'FN: ' + str(fn), 'ACC: ' + str(acc))    
         boxplot(indices_tp, indices_fn, volumes, data_path)    
-
+        model.to("cpu")
+        torch.save(
+            {
+                "encoder": model.encoder.state_dict(),
+                "epoch": epoch,
+            },
+            f"{config['output_dir']}/fine_epoch{epoch + 1}.pth",
+        )
+        model.to("cuda")
         print('========================================================================================')
 
 

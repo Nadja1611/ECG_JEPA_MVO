@@ -31,6 +31,7 @@ import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
+from ecg_data_500Hz_ptbxl_ours import *
 
 
 def parse():
@@ -175,6 +176,14 @@ def main(config):
     print('shapes ', waves.shape, labels.shape)
     dataset_with_labels = ECGDataset(waves, labels)
 
+
+    # PTBXL
+    waves_p = waves_ptbxl('/gpfs/data/fs72515/nadja_g/ECG_JEPA/physionet/files/ptb-xl/1.0.3/')
+    print(f"PTBXL waves shape: {waves_p.shape}")
+    logging.info(f"PTBXL waves shape: {waves_p.shape}")
+    dataset_ptbxl = ECGDataset_pretrain(waves_p)
+
+
     all_labels = []
     all_features = []
     # Create a dataloader
@@ -184,7 +193,13 @@ def main(config):
     with torch.no_grad():
         for wave, target in dataloader_with_labels:
             
-            repr = encoder.representation(wave.to("cpu"))  # (bs, 8, 2500) -> (bs, dim)
+            repr = encoder.representation(wave.to(device))  # (bs, 8, 2500) -> (bs, dim)
+            print("rep ", repr.shape)
+            all_features.append(repr.cpu())
+            all_labels.append(target)
+    with torch.no_grad():
+        for wave, target in dataset_ptbxl:
+            repr = encoder.representation(wave.to(device))  # (bs, 8, 2500) -> (bs, dim)
             print("rep ", repr.shape)
             all_features.append(repr.cpu())
             all_labels.append(target)
@@ -194,18 +209,23 @@ def main(config):
     torch.save(all_features, "/home/nadja/ECG_JEPA_Git/embeddings/embeddings_ours" + config['pathology'] + ".pt")
     torch.save(all_labels, "/home/nadja/ECG_JEPA_Git/embeddings/labels_ours" + config['pathology'] + ".pt")
 
+    print('waves mean: ', wave[0][0].mean())
+    print(f"Representation shape: {repr.shape}")      
+    LAB = torch.zeros((all_labels.shape[0], 2))  
+    LAB[:len(dataset), :2] = all_labels[:len(dataset)] 
+    LAB[len(dataset):, :2] = all_labels[len(dataset):] 
 
-    print(f"Representation shape: {repr.shape}")        
-    LAB = np.argmax(all_labels, axis=1)
+    LAB = np.argmax(LAB, axis=1)
 
     EMB = all_features
+    print('emb ' + str(EMB.shape))
     # Choose a method for dimensionality reduction
     method = "tsne"  # Options: "pca", "tsne", "umap"
 
     if method == "pca":
         reducer = PCA(n_components=2)
     elif method == "tsne":
-        reducer = TSNE(n_components=2, perplexity=10000,  random_state=42)
+        reducer = TSNE(n_components=2, perplexity=5,  random_state=42)
     elif method == "umap":
         reducer = umap.UMAP(n_components=2, random_state=42)
 
@@ -221,7 +241,7 @@ def main(config):
     plt.xlabel("Dim 1")
     plt.ylabel("Dim 2")
     plt.legend(title="Class", loc="best")
-    plt.savefig("/home/nadja/ECG_JEPA_Git/embeddings/embedding_space" + config['pathology'] + ".png")
+    plt.savefig("/home/nadja/ECG_JEPA_Git/embeddings/embedding_space_tsne_" + config['pathology'] + ".png")
 
 if __name__ == '__main__':
     config = parse()

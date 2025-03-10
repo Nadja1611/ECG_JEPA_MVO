@@ -672,8 +672,7 @@ def waves_ptbxl(data_dir, task="multilabel", reduced_lead=True, downsample=False
         # data = np.array([resample(data[i], 2500, axis=1) for i in range(len(data))])
         data = np.array([resample(data[i], 5000, axis=1) for i in range(len(data))])
 
-    if reduced_lead:
-        data = np.concatenate([data[:, :2], data[:, 6:]], axis=1)
+
 
     """normalize in the same way as shao waves """
     transform = Normalisation(mode="channel_wise")
