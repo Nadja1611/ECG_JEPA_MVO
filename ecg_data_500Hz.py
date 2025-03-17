@@ -95,9 +95,14 @@ def remove_invalid_samples(waves, index=False):
 
 # Custom dataset class
 class ECGDataset(Dataset):
-    def __init__(self, waves, labels, transform=None):
+    def __init__(self, waves, labels, transform=None, regression=None):
         self.waves = torch.tensor(waves, dtype=torch.float32)
+        
         self.labels = torch.tensor(labels, dtype=torch.long)
+        if regression == True:
+            self.labels = torch.tensor(labels, dtype=torch.float32)
+
+
         self.transform = transform
 
     def __len__(self):

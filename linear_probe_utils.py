@@ -319,10 +319,15 @@ def train_regression(
                 else:
                     outputs = model(batch_features)
 
+                print(outputs.shape, flush = True)
+                if len(outputs.shape)<2:
+                    outputs = outputs.unsqueeze(1)
+                  #  batch_labels = batch_labels.unsqueeze(1)
+
                 all_labels.append(batch_labels.cpu().numpy())
                 all_outputs.append(outputs.cpu().numpy())
 
-        all_labels = np.concatenate(all_labels)
+        all_labels = np.vstack(all_labels)
         all_outputs = np.vstack(all_outputs)
 
         if amp:
@@ -330,6 +335,7 @@ def train_regression(
 
 
         # Compute regression metrics
+        print(all_labels.shape, all_outputs.shape, flush = True)
         mse = mean_squared_error(all_labels, all_outputs)
         r2 = r2_score(all_labels, all_outputs)
 

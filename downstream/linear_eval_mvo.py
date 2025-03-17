@@ -132,16 +132,17 @@ def main(config):
         labels_train = torch.load(data_path + "/mvo_bin_train.pt")
         labels_test = torch.load(data_path + "/mvo_bin_val.pt")
     elif config['task'] == "regression_infarct":
-        labels_train = torch.load(data_path + "/scarvol_train.pt")
-        labels_test = torch.load(data_path + "/scarvol_val.pt")
-        labels_test = labels_test/torch.max(labels_test)
+        print('Infarct regression ...', flush = True)
+        labels_train = torch.load(data_path + "/rel_inf_size_train.pt")
+        labels_test = torch.load(data_path + "/rel_inf_size_val.pt")
+        print(labels_test, flush = True)
     else:
         labels_train = torch.load(data_path + "/mvo_vol_CNN_train.pt")
         labels_test = torch.load(data_path + "/mvo_vol_CNN_val.pt")
         labels_test = labels_test/torch.max(labels_test)
 
 
-    volumes = torch.load(os.path.join(data_path, 'mvo_volume_experts_val.pt'))
+    volumes = torch.load(os.path.join(data_path, 'mvo_vol_CNN_val.pt'))
 
     print(labels_train[:4])
     # waves_train, waves_test, labels_train, labels_test = waves_from_config(config,reduced_lead=True)
@@ -192,9 +193,14 @@ def main(config):
         waves_test = np.concatenate(
             (waves_test[:, :2, :], waves_test[:, 6:, :]), axis=1
         )
+        if config["task"] == "multiclass" or config["task"] == "multilabel":
+            train_dataset = ECGDataset(waves_train, labels_train)
+            test_dataset = ECGDataset(waves_test, labels_test)
 
-        train_dataset = ECGDataset(waves_train, labels_train)
-        test_dataset = ECGDataset(waves_test, labels_test)
+        else:
+            train_dataset = ECGDataset(waves_train, labels_train, regression = True)
+            test_dataset = ECGDataset(waves_test, labels_test, regression = True)
+
         train_loader = DataLoader(
             train_dataset, batch_size=128, shuffle=True, num_workers=num_workers
         )

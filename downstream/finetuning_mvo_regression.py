@@ -187,37 +187,28 @@ def main(config):
     # waves_train, waves_test, labels_train, labels_test = waves_from_config(config)
 
     if pathology == "mvo":
-        print('we predict mvo', flush = True)
         waves_train = torch.load(data_path + "/ecgs_train.pt")
         waves_test = torch.load(data_path + "/ecgs_val.pt")
         labels_train = torch.load(data_path + "/mvo_bin_train.pt")
         labels_test = torch.load(data_path + "/mvo_bin_val.pt")
-        volumes = torch.load(data_path + "/mvo_vol_CNN_val.pt")
-        volumes_IS = torch.load(data_path + "/rel_inf_size_val.pt")
-
-
     if pathology == "imh":
-        print('we predict imh', flush = True)
-        waves_train = torch.load(data_path + "/ecgs_train_percentile.pt")
-        waves_test = torch.load(data_path + "/ecgs_val_percentile.pt")
-        labels_train = torch.load(data_path + "/imh_train_percentile.pt")
-        labels_test = torch.load(data_path + "/imh_val_percentile.pt")
-        volumes = torch.load(data_path + "/mvo_vol_CNN_val_percentile.pt")
-        volumes_IS = torch.load(data_path + "/rel_inf_size_val_percentile.pt")
+        waves_train = torch.load(data_path + "/ecgs_train_MVO.pt")
+        waves_test = torch.load(data_path + "/ecgs_val_MVO.pt")
+        labels_train = torch.load(data_path + "/imh_train.pt")
+        labels_test = torch.load(data_path + "/imh_val.pt")
+
+    volumes = torch.load(data_path + "/mvo_vol_CNN_val.pt")
+    volumes_IS = torch.load(data_path + "/rel_inf_size_val.pt")
 
     waves_train = np.concatenate((waves_train[:, :2, :], waves_train[:, 6:, :]), axis=1)
     waves_test = np.concatenate((waves_test[:, :2, :], waves_test[:, 6:, :]), axis=1)
 
-    if task == "multilabel":
+    if "regression" in task:
         _, n_labels = labels_train.shape
         config["metric"]["num_labels"] = n_labels
         print(f"Number of labels: {n_labels}")
         n = n_labels
-    else:
-        n_classes = len(np.unique(labels_train))
-        config["metric"]["num_classes"] = n_classes
-        print(f"Number of classes: {n_classes}")
-        n = n_classes
+
 
     train_dataset = ECGDataset(waves_train, labels_train, train_transforms)
     test_dataset = ECGDataset(waves_test, labels_test, test_transforms)
@@ -246,7 +237,6 @@ def main(config):
     )
 
     lr = config["train"]["blr"] * config["dataloader"]["batch_size"] / 256
-    print('learning rate ', str(lr), flush = True)
     config["train"]["lr"] = lr
     optimizer = torch.optim.AdamW(
         model.parameters(),
@@ -257,11 +247,9 @@ def main(config):
 
     loss_scaler = NativeScaler()
     criterion = (
-        nn.BCEWithLogitsLoss()
-        if config["task"] == "multilabel"
-        else nn.CrossEntropyLoss()
+        nn.MSELoss()
     )
-    output_act = nn.Sigmoid() if config["task"] == "multilabel" else nn.Softmax(dim=-1)
+    output_act = nn.Linear() 
     best_loss = float("inf")
 
     metric_fn, best_metrics = build_metric_fn(config["metric"])
@@ -349,18 +337,5 @@ def main(config):
 
 if __name__ == "__main__":
     config = parse()
-
-    # pretrained_ckpt_dir = {
-    #     'ejepa_random': f"../weights/random_epoch100.pth",
-    #     'ejepa_multiblock': f"../weights/multiblock_epoch100.pth",
-    #     # 'cmsc': "../weights/shao+code15/CMSC/epoch300.pth",
-    #     # 'cpc': "../weights/shao+code15/cpc/base_epoch100.pth",
-    #     # 'simclr': "../weights/shao+code15/SimCLR/epoch300.pth",
-    #     # 'st_mem': "../weights/shao+code15/st_mem/st_mem_vit_base.pth",
-    # }
-
-    # # pretrained_ckpt_dir['mvt_larger_larger'] = f"../weights/shao+code15/block_masking/jepa_v4_20240720_215455_(0.175, 0.225)/epoch{100}.pth"
-
-    # config['ckpt_dir'] = pretrained_ckpt_dir[config['model_name']]
 
     main(config)
