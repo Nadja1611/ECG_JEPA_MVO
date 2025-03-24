@@ -190,20 +190,9 @@ def main(config):
         print('we predict mvo', flush = True)
         waves_train = torch.load(data_path + "/ecgs_train.pt")
         waves_test = torch.load(data_path + "/ecgs_val.pt")
-        labels_train = torch.load(data_path + "/mvo_bin_train.pt")
-        labels_test = torch.load(data_path + "/mvo_bin_val.pt")
-        volumes = torch.load(data_path + "/mvo_vol_CNN_val.pt")
-        volumes_IS = torch.load(data_path + "/rel_inf_size_val.pt")
+        labels_train = torch.load(data_path + "/mvo_train.pt")
+        labels_test = torch.load(data_path + "/mvo_val.pt")
 
-
-    if pathology == "imh":
-        print('we predict imh', flush = True)
-        waves_train = torch.load(data_path + "/ecgs_train_percentile.pt")
-        waves_test = torch.load(data_path + "/ecgs_val_percentile.pt")
-        labels_train = torch.load(data_path + "/imh_train_percentile.pt")
-        labels_test = torch.load(data_path + "/imh_val_percentile.pt")
-        volumes = torch.load(data_path + "/mvo_vol_CNN_val_percentile.pt")
-        volumes_IS = torch.load(data_path + "/rel_inf_size_val_percentile.pt")
 
     waves_train = np.concatenate((waves_train[:, :2, :], waves_train[:, 6:, :]), axis=1)
     waves_test = np.concatenate((waves_test[:, :2, :], waves_test[:, 6:, :]), axis=1)
@@ -331,8 +320,6 @@ def main(config):
             "FN: " + str(fn),
             "ACC: " + str(acc),
         )
-        print(volumes.shape, volumes_IS.shape)
-     #   boxplot(indices_tp, indices_fn, volumes, volumes_IS[:, 0], data_path)
         model.to("cpu")
         torch.save(
             {

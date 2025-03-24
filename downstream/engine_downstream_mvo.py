@@ -59,6 +59,8 @@ def train_one_epoch(model: torch.nn.Module,
 
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = model(samples)
+          #  heatmap = compute_grad_cam(model.encoder_blocks.blocks[-1].attn) 
+
             if isinstance(criterion, torch.nn.BCEWithLogitsLoss):
                 targets = targets.to(dtype=outputs.dtype)       
 

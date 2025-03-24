@@ -218,6 +218,32 @@ def waves_cinc(data_dir, reduced_lead=True):
     return torch.tensor(waves)
 
 
+
+def waves_ibk(data_dir, reduced_lead=True):
+    ''' the ibk folder has all .hea and dat. files in one folder called all'''
+    waves = []
+    transform = Normalisation(mode="channel_wise")
+
+    ecg_data = get_ecg_data(
+        os.path.join(data_dir), reduced_lead=reduced_lead
+    )
+    """ lead shift """
+    ecg_new = np.zeros((ecg_data.shape[0], 8, 2500))
+    ecg_new[:, :2] = ecg_data[:, :2, :2500]
+    ecg_new[:, 2:] = ecg_data[:, 2:, 2500:]
+    ecg_data = ecg_new
+    """ normalise lead wise """
+    transform = Normalisation(mode="channel_wise")
+    for i in range(len(ecg_data)):
+        ecg_data[i] = transform(ecg_data[i])
+    waves.append(ecg_data)
+
+    waves = np.concatenate(waves, axis=0)
+    waves = remove_invalid_samples(waves)
+
+    return waves
+
+
 def waves_shao(data_dir, reduced_lead=True):
     waves = []
     transform = Normalisation(mode="channel_wise")
